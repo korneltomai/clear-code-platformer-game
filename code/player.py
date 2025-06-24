@@ -1,10 +1,9 @@
 from settings import *
+from sprites import AnimatedSprite
 
-class Player(pygame.sprite.Sprite):
-    def __init__(self, groups, collision_sprites, pos):
-        super().__init__(groups)
-        self.image = pygame.image.load(join("images", "player", "0.png")).convert_alpha()
-        self.rect = self.image.get_frect(center = pos)
+class Player(AnimatedSprite):
+    def __init__(self, groups, collision_sprites, frames, pos):
+        super().__init__(groups, frames, pos)
         self.hitbox_rect = self.rect.inflate(-40, 0)
 
         # movement
@@ -14,11 +13,13 @@ class Player(pygame.sprite.Sprite):
         self.gravity = 50
         self.jump_height = 20
         self.on_ground = False
+        self.flipped = False
         
     def update(self, delta_time):
         self.check_ground()
         self.handle_input()
         self.move(delta_time)
+        self.animate(delta_time)
 
     def handle_input(self):
         keys = pygame.key.get_pressed()
@@ -56,3 +57,15 @@ class Player(pygame.sprite.Sprite):
                     if self.direction.y < 0:
                         self.hitbox_rect.top = sprite.rect.bottom
                     self.direction.y = 0
+
+    def animate(self, delta_time):
+        if self.direction.x:
+            self.frame_index += self.animation_speed * delta_time
+            self.flipped = self.direction.x < 0
+        else:
+            self.frame_index = 0
+
+        self.frame_index = 1 if not self.on_ground else self.frame_index
+
+        self.image = self.frames[int(self.frame_index) % len(self.frames)]
+        self.image = pygame.transform.flip(self.image, self.flipped, False)
