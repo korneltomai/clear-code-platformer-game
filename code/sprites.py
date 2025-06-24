@@ -1,5 +1,7 @@
 from settings import *
 from custom_timer import Timer
+from math import sin
+from random import randint
 
 class Sprite(pygame.sprite.Sprite):
     def __init__(self, groups, surf, pos):
@@ -20,7 +22,6 @@ class Bullet(Sprite):
     def update(self, delta_time):
         self.rect.x += self.direction * self.speed * delta_time
 
-    
 class Fire(Sprite):
     def __init__(self, groups, surf, pos, player):
         super().__init__(groups, surf, pos)
@@ -47,7 +48,6 @@ class Fire(Sprite):
             self.image = pygame.transform.flip(self.image, True, False)
             self.flipped = not self.flipped
 
-
 class AnimatedSprite(Sprite):
     def __init__(self, groups, frames, pos):
         self.frames = frames
@@ -59,16 +59,52 @@ class AnimatedSprite(Sprite):
         self.frame_index += self.animation_speed * delta_time
         self.image = self.frames[int(self.frame_index) % len(self.frames)]
 
-class Bee(AnimatedSprite):
+class Enemy(AnimatedSprite):
     def __init__(self, groups, frames, pos):
         super().__init__(groups, frames, pos)
+        self.death_timer = Timer(200, self.kill)
 
     def update(self, delta_time):
-        self.animate(delta_time)
+        self.death_timer.update()
+        if not self.death_timer:
+            self.move(delta_time)
+            self.animate(delta_time)
+            self.check_constraints()
 
-class Worm(AnimatedSprite):
+    def destroy(self):
+        self.death_timer.activate()
+        self.image = pygame.mask.from_surface(self.image).to_surface()
+        self.image.set_colorkey("black")
+
+class Bee(Enemy):
     def __init__(self, groups, frames, pos):
         super().__init__(groups, frames, pos)
+        self.speed = randint(250, 450)
+        self.amplitude = randint(400, 500)
+        self.frequency = randint(300, 600)
 
-    def update(self, delta_time):
-        self.animate(delta_time)
+    def move(self, delta_time):
+        self.rect.x -= self.speed * delta_time
+        self.rect.y += sin(pygame.time.get_ticks() / self.frequency) * self.amplitude * delta_time
+
+    def check_constraints(self):
+        if self.rect.right <= 0:
+            self.kill()
+
+class Worm(Enemy):
+    def __init__(self, groups, frames, area_rect):
+        super().__init__(groups, frames, area_rect.topleft)
+        self.rect.bottomleft = area_rect.bottomleft
+        self.area_rect = area_rect  
+        
+        self.direction = 1
+        self.speed = randint(125, 175)
+
+    def move(self, delta_time):
+        self.rect.x += self.direction * self.speed * delta_time
+
+    def check_constraints(self):
+        if not self.area_rect.contains(self.rect):
+            self.direction = -self.direction
+            self.frames = [pygame.transform.flip(frame, True, False) for frame in self.frames]
+            
