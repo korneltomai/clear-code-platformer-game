@@ -1,8 +1,9 @@
 from settings import *
-from sprites import AnimatedSprite
+from sprites import AnimatedSprite, Bullet
+from custom_timer import Timer
 
 class Player(AnimatedSprite):
-    def __init__(self, groups, collision_sprites, frames, pos):
+    def __init__(self, groups, collision_sprites, frames, pos, create_bullet):
         super().__init__(groups, frames, pos)
         self.hitbox_rect = self.rect.inflate(-40, 0)
 
@@ -14,8 +15,13 @@ class Player(AnimatedSprite):
         self.jump_height = 20
         self.on_ground = False
         self.flipped = False
+
+        # shooting
+        self.shoot_timer = Timer(500)
+        self.create_bullet = create_bullet
         
     def update(self, delta_time):
+        self.shoot_timer.update()
         self.check_ground()
         self.handle_input()
         self.move(delta_time)
@@ -25,8 +31,12 @@ class Player(AnimatedSprite):
         keys = pygame.key.get_pressed()
         self.direction.x = int(keys[pygame.K_RIGHT] or keys[pygame.K_d]) - int(keys[pygame.K_LEFT] or keys[pygame.K_a])
 
-        if (keys[pygame.K_UP] or keys[pygame.K_SPACE]) and self.on_ground:
+        if (keys[pygame.K_UP] or keys[pygame.K_w]) and self.on_ground:
             self.direction.y = - self.jump_height
+
+        if (keys[pygame.K_DOWN] or keys[pygame.K_s]) and not self.shoot_timer:
+            self.create_bullet(self.rect.center, -1 if self.flipped else 1)
+            self.shoot_timer.activate()
 
     def move(self, delta_time):
         # horizontal
