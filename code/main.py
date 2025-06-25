@@ -19,6 +19,7 @@ class Game:
         self.collision_sprites = pygame.sprite.Group()
         self.bullet_sprites = pygame.sprite.Group()
         self.enemy_sprites = pygame.sprite.Group()
+        self.bee_sprites = pygame.sprite.Group()
 
         # timers
         self.bee_timer = Timer(1000, self.create_bee, True, True)
@@ -52,7 +53,10 @@ class Game:
         self.bullet_surface = import_image("images", "gun", "bullet")
         self.fire_surface = import_image("images", "gun", "fire")
 
-        self.bee_frames = import_folder("images", "enemies", "bee")
+        self.bee_frames = {
+            "normal": import_folder("images", "enemies", "bee"),
+            "aggressive": import_folder("images", "enemies", "bee_aggro")
+        }
         self.worm_frames = import_folder("images", "enemies", "worm")
 
         # sounds
@@ -81,7 +85,7 @@ class Game:
         self.audio["music"].play(loops = -1)
 
     def create_bee(self):
-        Bee((self.all_sprites, self.enemy_sprites), self.bee_frames, (self.map_width + WINDOW_WIDTH / 2, randint(0, self.map_height)))
+        Bee((self.all_sprites, self.enemy_sprites, self.bee_sprites), self.bee_sprites, self.player, self.bee_frames, (self.map_width + WINDOW_WIDTH / 2, randint(0, self.map_height)))
 
     def create_bullet(self, pos, direction):
         x = pos[0] + direction * 34 if direction == 1 else pos[0] + direction * 34 - self.bullet_surface.get_width()

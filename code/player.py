@@ -8,7 +8,7 @@ class Player(AnimatedSprite):
         self.hitbox_rect = self.rect.inflate(-40, 0)
 
         # movement
-        self.direction = pygame.math.Vector2()
+        self.direction = pygame.Vector2()
         self.collision_sprites = collision_sprites
         self.speed = 400
         self.gravity = 50

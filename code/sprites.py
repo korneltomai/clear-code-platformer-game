@@ -77,19 +77,44 @@ class Enemy(AnimatedSprite):
         self.image.set_colorkey("black")
 
 class Bee(Enemy):
-    def __init__(self, groups, frames, pos):
-        super().__init__(groups, frames, pos)
+    def __init__(self, groups, bee_sprites, player, frames, pos):
+        super().__init__(groups, frames["normal"], pos)
+        self.bee_sprites = bee_sprites
+        self.frames = frames
+        self.player = player
         self.speed = randint(250, 450)
         self.amplitude = randint(400, 500)
         self.frequency = randint(300, 600)
+        self.direction = pygame.Vector2(-1, 0)
+
+        self.aggressive = False
+        self.aggro_range = 400
 
     def move(self, delta_time):
-        self.rect.x -= self.speed * delta_time
-        self.rect.y += sin(pygame.time.get_ticks() / self.frequency) * self.amplitude * delta_time
+        if self.aggressive:
+            self.direction = (pygame.Vector2(self.player.rect.center) - pygame.Vector2(self.rect.center))
+        else:
+            self.direction.y = sin(pygame.time.get_ticks() / self.frequency)
+
+        self.direction = self.direction.normalize()
+        self.rect.center += self.direction * self.speed * delta_time
 
     def check_constraints(self):
         if self.rect.right <= 0:
             self.kill()
+
+    def destroy(self):
+        for bee in self.bee_sprites:
+            if (pygame.Vector2(bee.rect.center) - pygame.Vector2(self.rect.center)).length() < self.aggro_range:
+                bee.aggressive = True
+        super().destroy()
+
+    def animate(self, delta_time):
+        self.frame_index += self.animation_speed * delta_time
+        if self.aggressive:
+            self.image = self.frames["aggressive"][int(self.frame_index) % len(self.frames)]
+        else:
+            self.image = self.frames["normal"][int(self.frame_index) % len(self.frames)]
 
 class Worm(Enemy):
     def __init__(self, groups, frames, area_rect):
